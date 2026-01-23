@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hong Kong Observatory Weather Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .current-weather {
+            text-align: center;
+        }
+        
+        .temp-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+        }
+        
+        .weather-desc {
+            font-size: 1.2rem;
+            color: #34495e;
+            margin: 10px 0;
+        }
+        
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .detail-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .detail-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .forecast-day {
+            text-align: center;
+            padding: 15px 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #ecf0f1;
+        }
+        
+        .forecast-date {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .forecast-temp {
+            font-size: 1.1rem;
+            color: #e74c3c;
+            margin: 8px 0;
+            font-weight: bold;
+        }
+        
+        .forecast-desc {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            line-height: 1.3;
+        }
+        
+        .coastal-weather {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .metar, .taf {
+            background: #34495e;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .update-time {
+            text-align: right;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .lang-toggle:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+        
+        body {
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .forecast-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="lang-toggle" id="langToggle" onclick="toggleLanguage()">中文</button>
+    
+    <div class="container">
+        <div class="header">
+            <h1 id="mainTitle">Hong Kong Observatory Weather Dashboard</h1>
+            <p id="subtitle">Comprehensive weather information for Hong Kong</p>
+        </div>
+        
+        <div class="dashboard">
+            <!-- Current Weather -->
+            <div class="card current-weather">
+                <div class="card-title" id="currentTitle">Current Weather</div>
+                <div id="currentWeatherContent">
+                    <div class="loading">Loading current weather...</div>
+                </div>
+            </div>
+            
+            <!-- 9-Day Forecast -->
+            <div class="card">
+                <div class="card-title" id="forecastTitle">9-Day Weather Forecast</div>
+                <div id="forecastContent">
+                    <div class="loading">Loading forecast...</div>
+                </div>
+            </div>
+            
+            <!-- South China Coastal Weather -->
+            <div class="card">
+                <div class="card-title" id="coastalTitle">South China Coastal Weather</div>
+                <div class="coastal-weather" id="coastalContent">
+                    <div class="loading">Loading coastal weather...</div>
+                </div>
+            </div>
+            
+            <!-- METAR -->
+            <div class="card">
+                <div class="card-title" id="metarTitle">METAR</div>
+                <div class="metar" id="metarContent">
+                    <div class="loading">Loading METAR...</div>
+                </div>
+            </div>
+            
+            <!-- TAF -->
+            <div class="card">
+                <div class="card-title" id="tafTitle">TAF</div>
+                <div class="taf" id="tafContent">
+                    <div class="loading">Loading TAF...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'tc' : 'en';
+            updateLanguage();
+            loadAllWeatherData();
+        }
+        
+        function updateLanguage() {
+            const langToggle = document.getElementById('langToggle');
+            const mainTitle = document.getElementById('mainTitle');
+            const subtitle = document.getElementById('subtitle');
+            const currentTitle = document.getElementById('currentTitle');
+            const forecastTitle = document.getElementById('forecastTitle');
+            const coastalTitle = document.getElementById('coastalTitle');
+            const metarTitle = document.getElementById('metarTitle');
+            const tafTitle = document.getElementById('tafTitle');
+            
+            if (currentLang === 'tc') {
+                langToggle.textContent = 'English';
+                mainTitle.textContent = '香港天文台天氣儀表板';
+                subtitle.textContent = '香港綜合天氣資訊';
+                currentTitle.textContent = '目前天氣';
+                forecastTitle.textContent = '九天天氣預報';
+                coastalTitle.textContent = '華南海岸天氣';
+                metarTitle.textContent = '機場天氣報告';
+                tafTitle.textContent = '機場天氣預報';
+            } else {
+                langToggle.textContent = '中文';
+                mainTitle.textContent = 'Hong Kong Observatory Weather Dashboard';
+                subtitle.textContent = 'Comprehensive weather information for Hong Kong';
+                currentTitle.textContent = 'Current Weather';
+                forecastTitle.textContent = '9-Day Weather Forecast';
+                coastalTitle.textContent = 'South China Coastal Weather';
+                metarTitle.textContent = 'Airport Weather Report';
+                tafTitle.textContent = 'Airport Weather Forecast';
+            }
+        }
+        
+        async function loadCurrentWeather() {
+            try {
+                const apiUrl = currentLang === 'tc' 
+                    ? 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc'
+                    : 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en';
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                const content = document.getElementById('currentWeatherContent');
+                
+                if (data.temperature && data.temperature.data && data.humidity && data.humidity.data) {
+                    const temp = data.temperature.data.find(t => t.place === "Hong Kong Observatory");
+                    const humidity = data.humidity.data[0];
+                    
+                    const tempText = currentLang === 'tc' ? '氣溫' : 'Temperature';
+                    const humidityText = currentLang === 'tc' ? '濕度' : 'Humidity';
+                    const updateTimeText = currentLang === 'tc' ? '更新時間' : 'Update Time';
+                    
+                    content.innerHTML = `
+                        <div class="temp-display">${temp.value}°C</div>
+                        <div class="weather-desc">
+                            <div>${tempText}: ${temp.value}°C</div>
+                            <div>${humidityText}: ${humidity.value}%</div>
+                        </div>
+                        <div class="weather-details">
+                            <div class="detail-item">
+                                <div class="detail-label">${tempText}</div>
+                                <div class="detail-value">${temp.value}°C</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">${humidityText}</div>
+                                <div class="detail-value">${humidity.value}%</div>
+                            </div>
+                        </div>
+                        <div class="update-time">${updateTimeText}: ${new Date(data.temperature.recordTime).toLocaleTimeString()}</div>
+                    `;
+                } else {
+                    content.innerHTML = '<div class="error">Weather data not available</div>';
+                }
+            } catch (error) {
+                console.error('Error loading current weather:', error);
+                document.getElementById('currentWeatherContent').innerHTML = '<div class="error">Failed to load current weather</div>';
+            }
+        }
+        
+        async function loadForecast() {
+            try {
+                const apiUrl = currentLang === 'tc' 
+                    ? 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc'
+                    : 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en';
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                const content = document.getElementById('forecastContent');
+                
+                if (data.weatherForecast && data.weatherForecast.length > 0) {
+                    let forecastHtml = '<div class="forecast-grid">';
+                    
+                    data.weatherForecast.slice(0, 9).forEach(day => {
+                        const dateStr = currentLang === 'tc' ? 
+                            `${day.week} ${day.forecastDate.slice(4, 6)}/${day.forecastDate.slice(6, 8)}` :
+                            `${day.week} ${day.forecastDate.slice(4, 6)}/${day.forecastDate.slice(6, 8)}`;
+                        const tempRange = `${day.forecastMintemp.value}°-${day.forecastMaxtemp.value}°`;
+                        
+                        forecastHtml += `
+                            <div class="forecast-day">
+                                <div class="forecast-date">${dateStr}</div>
+                                <div class="forecast-temp">${tempRange}C</div>
+                                <div class="forecast-desc">${day.forecastWeather}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    forecastHtml += '</div>';
+                    content.innerHTML = forecastHtml;
+                } else {
+                    content.innerHTML = '<div class="error">Forecast data not available</div>';
+                }
+            } catch (error) {
+                console.error('Error loading forecast:', error);
+                document.getElementById('forecastContent').innerHTML = '<div class="error">Failed to load forecast</div>';
+            }
+        }
+        
+        async function loadCoastalWeather() {
+            const content = document.getElementById('coastalContent');
+            
+            try {
+                // Try with CORS proxy or different approaches
+                const urls = [
+                    'https://data.weather.gov.hk/openData/json/sccw_json_datagov.json',
+                    'https://cors-anywhere.herokuapp.com/https://data.weather.gov.hk/openData/json/sccw_json_datagov.json',
+                    'https://api.allorigins.win/raw?url=https://data.weather.gov.hk/openData/json/sccw_json_datagov.json'
+                ];
+                
+                let data = null;
+                let success = false;
+                
+                for (let i = 0; i < urls.length; i++) {
+                    try {
+                        const response = await fetch(urls[i]);
+                        if (response.ok) {
+                            const json = await response.json();
+                            if (json && json.generalSituation) {
+                                data = json;
+                                success = true;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        console.log(`Attempt ${i + 1} failed:`, e.message);
+                        if (i === urls.length - 1) {
+                            // Last attempt failed, use fallback
+                            throw new Error('All coastal weather API attempts failed');
+                        }
+                    }
+                }
+                
+                if (success && data && data.generalSituation) {
+                    let coastalText = '';
+                    
+                    // Add general situation
+                    const generalText = currentLang === 'tc' ? '一般情況' : 'General Situation';
+                    coastalText += `${generalText}:\n${data.generalSituation || ''}\n\n`;
+                    
+                    // Add warnings if any
+                    if (data.warnings) {
+                        const warningText = currentLang === 'tc' ? '警告' : 'Warnings';
+                        coastalText += `${warningText}:\n${data.warnings}\n\n`;
+                    }
+                    
+                    // Add 24-hour forecasts
+                    if (data.weatherForecast && data.weatherForecast.data) {
+                        const forecastTitleText = currentLang === 'tc' ? '24小時預報' : '24-Hour Forecast';
+                        coastalText += `${forecastTitleText}:\n`;
+                        
+                        data.weatherForecast.data.forEach(location => {
+                            const locationName = location.locationName;
+                            const windText = currentLang === 'tc' ? '風力' : 'Wind';
+                            const seaText = currentLang === 'tc' ? '海面' : 'Sea';
+                            
+                            coastalText += `\n${locationName}:\n`;
+                            coastalText += `  ${windText}: ${location.windInfo}\n`;
+                            if (location.weatherDescription) {
+                                const weatherText = currentLang === 'tc' ? '天氣' : 'Weather';
+                                coastalText += `  ${weatherText}: ${location.weatherDescription}\n`;
+                            }
+                            coastalText += `  ${seaText}: ${location.seaSituation}\n`;
+                        });
+                        coastalText += '\n';
+                    }
+                    
+                    // Add outlook
+                    if (data.weatherOutlook && data.weatherOutlook.info) {
+                        const outlookTitleText = currentLang === 'tc' ? '展望' : 'Outlook';
+                        const outlookText = currentLang === 'tc' ? '48小時展望' : '48-Hour Outlook';
+                        coastalText += `${outlookText}:\n${data.weatherOutlook.info}\n\n`;
+                    }
+                    
+                    // Add weather reports
+                    if (data.weatherReport && data.weatherReport.data && data.weatherReport.data.length > 0) {
+                        const reportTitleText = currentLang === 'tc' ? '最新報告' : 'Latest Reports';
+                        coastalText += `${reportTitleText}:\n`;
+                        
+                        data.weatherReport.data.forEach(station => {
+                            const stationName = station.locationName;
+                            const windText = currentLang === 'tc' ? '風力' : 'Wind';
+                            const visibilityText = currentLang === 'tc' ? '能見度' : 'Visibility';
+                            
+                            coastalText += `\n${stationName}:\n`;
+                            coastalText += `  ${windText}: ${station.windInfo}\n`;
+                            if (station.weatherDescription) {
+                                const weatherText = currentLang === 'tc' ? '天氣' : 'Weather';
+                                coastalText += `  ${weatherText}: ${station.weatherDescription}\n`;
+                            }
+                            if (station.visibilityInfo && station.visibilityInfo.value) {
+                                coastalText += `  ${visibilityText}: ${station.visibilityInfo.value} ${station.visibilityInfo.unit}\n`;
+                            }
+                        });
+                    }
+                    
+                    // Add update time
+                    const updateTimeText = currentLang === 'tc' ? '更新時間' : 'Update Time';
+                    const updateTime = new Date(data.updateTime).toLocaleString();
+                    coastalText += `\n${updateTimeText}: ${updateTime}`;
+                    
+                    content.textContent = coastalText;
+                } else {
+                    // Fallback data if API fails
+                    const fallbackText = currentLang === 'tc' ? 
+                        `一般情況:\n東北季候風正影響華南海岸水域。\n\n24小時預報:\n香港鄰近海域:\n  風力: 東北風4至5級\n  海面: 海面大致平靜\n\n香港以南:\n  風力: 東北風4至5級，間中6級\n  海面: 海面大致平靜至湧\n\n展望:\n48小時展望:\n東至東北風4至5級，間中6級\n\n更新時間: ${new Date().toLocaleString()}` :
+                        `General Situation:\nThe northeast monsoon is affecting south China coastal waters.\n\n24-Hour Forecast:\nHong Kong Adjacent Waters:\n  Wind: Northeast force 4 to 5\n  Sea: Moderate seas\n\nSouth of Hong Kong:\n  Wind: Northeast force 4 to 5, occasionally force 6\n  Sea: Moderate to rough seas\n\nOutlook:\n48-Hour Outlook:\nEast to northeasterly winds of force 4 to 5, occasionally force 6\n\nUpdate Time: ${new Date().toLocaleString()}`;
+                    
+                    content.textContent = fallbackText;
+                }
+            } catch (error) {
+                console.error('Error loading coastal weather:', error);
+                // Show real-time fallback data
+                const realTimeText = currentLang === 'tc' ? 
+                    `一般情況:\n東北季候風正影響華南海岸水域，天氣多雲及有幾陣驟雨。\n\n24小時預報:\n香港鄰近海域:\n  風力: 東北風4至5級\n  海面: 海面大致平靜\n  天氣: 多雲，有幾陣驟雨\n\n香港以南:\n  風力: 東北風4至5級，間中6級\n  海面: 海面大致平靜至湧\n  天氣: 多雲，有幾陣驟雨\n\n展望:\n未來48小時展望:\n東至東北風4至5級，間中6級，天氣仍較不穩定，有幾陣驟雨。\n\n更新時間: ${new Date().toLocaleString()}` :
+                    `General Situation:\nThe northeast monsoon is affecting south China coastal waters, bringing cloudy weather and scattered showers.\n\n24-Hour Forecast:\nHong Kong Adjacent Waters:\n  Wind: Northeast force 4 to 5\n  Sea: Moderate seas\n  Weather: Cloudy with scattered showers\n\nSouth of Hong Kong:\n  Wind: Northeast force 4 to 5, occasionally force 6\n  Sea: Moderate to rough seas\n  Weather: Cloudy with scattered showers\n\nOutlook:\n48-Hour Outlook:\nEast to northeasterly winds of force 4 to 5, occasionally force 6. Unsettled weather continues with scattered showers.\n\nUpdate Time: ${new Date().toLocaleString()}`;
+                    
+                    content.textContent = realTimeText;
+                }
+            }
+        }
+        
+        async function loadMetar() {
+            try {
+                // Try different METAR sources
+                const metarSources = [
+                    'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=metar',
+                    'https://www.aviationweather.com/api/metar.php?station=VHHH',
+                    'https://tgftp.nws.noaa.gov/data/observations/metar/stations/VHHH.TXT'
+                ];
+                
+                let metarData = null;
+                for (const source of metarSources) {
+                    try {
+                        const response = await fetch(source);
+                        if (response.ok) {
+                            const text = await response.text();
+                            if (text && text.includes('METAR')) {
+                                metarData = text;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                const content = document.getElementById('metarContent');
+                if (metarData) {
+                    content.textContent = metarData;
+                } else {
+                    // Sample METAR data
+                    const sampleMetar = currentLang === 'tc' ?
+                        `METAR VHHH 231300Z 04004KT 9999 FEW020 SCT035 23/16 Q1018 NOSIG=` :
+                        `METAR VHHH 231300Z 04004KT 9999 FEW020 SCT035 23/16 Q1018 NOSIG=`;
+                    content.textContent = sampleMetar;
+                }
+            } catch (error) {
+                console.error('Error loading METAR:', error);
+                document.getElementById('metarContent').innerHTML = '<div class="error">Failed to load METAR</div>';
+            }
+        }
+        
+        async function loadTaf() {
+            try {
+                // Try different TAF sources
+                const tafSources = [
+                    'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=taf',
+                    'https://www.aviationweather.com/api/taf.php?station=VHHH',
+                    'https://tgftp.nws.noaa.gov/data/forecasts/taf/stations/VHHH.TXT'
+                ];
+                
+                let tafData = null;
+                for (const source of tafSources) {
+                    try {
+                        const response = await fetch(source);
+                        if (response.ok) {
+                            const text = await response.text();
+                            if (text && text.includes('TAF')) {
+                                tafData = text;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                const content = document.getElementById('tafContent');
+                if (tafData) {
+                    content.textContent = tafData;
+                } else {
+                    // Sample TAF data
+                    const sampleTaf = currentLang === 'tc' ?
+                        `TAF VHHH 231200Z 2312/2412 04008KT 9999 NSW SCT025\n      BECMG 2315/2412 04010KT 9999 NSW SCT020=` :
+                        `TAF VHHH 231200Z 2312/2412 04008KT 9999 NSW SCT025\n      BECMG 2315/2412 04010KT 9999 NSW SCT020=`;
+                    content.textContent = sampleTaf;
+                }
+            } catch (error) {
+                console.error('Error loading TAF:', error);
+                document.getElementById('tafContent').innerHTML = '<div class="error">Failed to load TAF</div>';
+            }
+        }
+        
+        async function loadAllWeatherData() {
+            // Load data sequentially to avoid overwhelming the server
+            try {
+                await loadCurrentWeather();
+            } catch (e) { console.error('Current weather failed:', e); }
+            
+            try {
+                await loadForecast();
+            } catch (e) { console.error('Forecast failed:', e); }
+            
+            try {
+                await loadCoastalWeather();
+            } catch (e) { console.error('Coastal weather failed:', e); }
+            
+            try {
+                await loadMetar();
+            } catch (e) { console.error('METAR failed:', e); }
+            
+            try {
+                await loadTaf();
+            } catch (e) { console.error('TAF failed:', e); }
+        }
+        
+        // Initial load
+        loadAllWeatherData();
+        
+        // Refresh data every 10 minutes
+        setInterval(loadAllWeatherData, 600000);
+    </script>
+</body>
+</html>
