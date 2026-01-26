@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hong Kong Time & Weather</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background: white;
+            color: #333;
+            position: relative;
+        }
+        .container {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        td {
+            padding: 10px;
+            vertical-align: top;
+        }
+        /* 修正：強制標題置中 */
+        .temperature-title, .weather-title, .bus-title {
+            text-align: center !important;
+            margin: 0 auto 10px;
+            display: block;
+            font-weight: bold;
+        }
+        .bus-section {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.3);
+            height: 100%;
+        }
+        .bus-update-time {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 15px;
+        }
+        .bus-routes {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .bus-route {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+            flex: 1;
+        }
+        .route-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        .arrival-times {
+            text-align: center;
+        }
+        .arrival-time {
+            font-size: 1.1rem;
+            color: #333;
+            margin: 5px 0;
+            padding: 3px 8px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .no-arrival {
+            color: #999;
+            font-style: italic;
+        }
+        .time-section {
+            padding: 20px;
+            text-align: center;
+            height: 100%;
+        }
+        .time {
+            font-size: 5.2rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #2c3e50;
+        }
+        .date {
+            font-size: 1.95rem;
+            margin-bottom: 10px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        .timezone {
+            font-size: 1.56rem;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+        .temperature-section {
+            background: transparent;
+            padding: 20px 10px;
+            text-align: center;
+            color: #1976D2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .temperature-display {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #1976D2;
+        }
+        .temperature-location {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        .temperature-update {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            color: #666;
+        }
+        .weather-section {
+            padding: 20px 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+        }
+        .weather-update-time {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .weather-forecast {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 100%;
+            width: 100%;
+        }
+        .weather-day {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .weather-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 8px;
+            image-rendering: -webkit-optimize-contrast;
+        }
+        .weather-date {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        .weather-temp {
+            font-size: 1.15rem;
+            color: #e74c3c;
+            margin: 5px 0;
+            font-weight: 500;
+        }
+        .weather-desc {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
+        .loading {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .lang-toggle:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 1200px) {
+            td:nth-child(1) { width: 25%; }
+            td:nth-child(2) { width: 35%; }
+            td:nth-child(3) { width: 15%; }
+            td:nth-child(4) { width: 25%; }
+        }
+        @media (max-width: 768px) {
+            table { display: block; }
+            td { display: block; width: 100%; margin-bottom: 20px; }
+            .weather-forecast { grid-template-columns: repeat(2, 1fr); }
+            .time { font-size: 4rem; }
+        }
+        @media (max-width: 480px) {
+            .weather-forecast { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <button class="lang-toggle" id="langToggle" onclick="toggleLanguage()">中文</button>
+    <div class="container">
+        <table>
+            <tr>
+                <td style="width: 25%;">
+                    <div class="bus-section">
+                        <div class="bus-title" id="busTitle">Bus Arrival Times</div>
+                        <div class="bus-update-time" id="busUpdateTime">Last updated: --:--</div>
+                        <div class="bus-routes" id="busContainer">
+                            <div class="loading" id="busLoading">Loading bus data...</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="width: 35%;">
+                    <div class="time-section">
+                        <div class="timezone">Hong Kong Time (HKT)</div>
+                        <div class="date" id="date"></div>
+                        <div class="time" id="time"></div>
+                    </div>
+                </td>
+                <td style="width: 15%;">
+                    <div class="temperature-section">
+                        <div class="temperature-title" id="tempTitle">Current Temperature</div>
+                        <div class="temperature-display" id="tempDisplay">--°C</div>
+                        <div class="temperature-location" id="tempLocation">Kwun Tong</div>
+                        <div class="temperature-update" id="tempUpdateTime">Last updated: --:--</div>
+                    </div>
+                </td>
+                <td style="width: 25%;">
+                    <div class="weather-section">
+                        <div class="weather-title">Hong Kong 6-Day Weather Forecast</div>
+                        <div class="weather-update-time" id="weatherUpdateTime">Last updated: --:--</div>
+                        <div id="weather-container">
+                            <div class="loading" id="loadingMessage">Loading weather data...</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        
+        function getWeatherIcon(weatherDesc) {
+            const desc = weatherDesc.toLowerCase();
+            if (desc.includes('rain')) return 'rain.png';
+            if (desc.includes('bright')) return 'bright.png';
+            if (desc.includes('cloudy')) return 'cloudy.png';
+            if (desc.includes('sunny intervals') || desc.includes('sunny periods')) return 'sunny_intervals.png';
+            if (desc.includes('sunny') || desc.includes('fine')) return 'sunny.png';
+            return '';
+        }
+        
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'tc' : 'en';
+            updateLanguage();
+            updateTime();
+            loadWeather();
+            loadBusData();
+            loadTemperature();
+        }
+        
+        function updateLanguage() {
+            const langToggle = document.getElementById('langToggle');
+            const timezone = document.querySelector('.timezone');
+            const weatherTitle = document.querySelector('.weather-title');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const busTitle = document.getElementById('busTitle');
+            const busLoading = document.getElementById('busLoading');
+            const busUpdateTime = document.getElementById('busUpdateTime');
+            const tempTitle = document.getElementById('tempTitle');
+            const tempLocation = document.getElementById('tempLocation');
+            const weatherUpdateTime = document.getElementById('weatherUpdateTime');
+            
+            if (currentLang === 'tc') {
+                langToggle.textContent = 'English';
+                timezone.textContent = '香港時間 (HKT)';
+                weatherTitle.textContent = '香港六日天氣預報';
+                loadingMessage.textContent = '正在載入天氣資料...';
+                busTitle.textContent = '巴士到站時間';
+                busLoading.textContent = '正在載入巴士資料...';
+                tempTitle.textContent = '目前溫度';
+                tempLocation.textContent = '觀塘';
+                document.title = '香港時間及天氣';
+                document.documentElement.lang = 'zh-HK';
+                document.body.style.fontFamily = '"Microsoft JhengHei", "PingFang HK", Arial, sans-serif';
+            } else {
+                langToggle.textContent = '中文';
+                timezone.textContent = 'Hong Kong Time (HKT)';
+                weatherTitle.textContent = 'Hong Kong 6-Day Weather Forecast';
+                loadingMessage.textContent = 'Loading weather data...';
+                busTitle.textContent = 'Bus Arrival Times';
+                busLoading.textContent = 'Loading bus data...';
+                tempTitle.textContent = 'Current Temperature';
+                tempLocation.textContent = 'Kwun Tong';
+                document.title = 'Hong Kong Time & Weather';
+                document.documentElement.lang = 'en';
+                document.body.style.fontFamily = 'Arial, sans-serif';
+            }
+            updateBusUpdateTimeText();
+            updateWeatherUpdateTimeText();
+        }
+        
+        function updateBusUpdateTimeText() {
+            const busUpdateTime = document.getElementById('busUpdateTime');
+            const lastUpdateText = currentLang === 'tc' ? '最後更新' : 'Last updated';
+            busUpdateTime.textContent = `${lastUpdateText}: --:--`;
+        }
+        
+        function updateWeatherUpdateTimeText() {
+            const weatherUpdateTime = document.getElementById('weatherUpdateTime');
+            const lastUpdateText = currentLang === 'tc' ? '最後更新' : 'Last updated';
+            weatherUpdateTime.textContent = `${lastUpdateText}: --:--`;
+        }
+        
+        function updateBusUpdateTime(timestamp) {
+            const busUpdateTime = document.getElementById('busUpdateTime');
+            const lastUpdateText = currentLang === 'tc' ? '最後更新' : 'Last updated';
+            const updateDate = new Date(timestamp);
+            const timeStr = updateDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            busUpdateTime.textContent = `${lastUpdateText}: ${timeStr}`;
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            const locale = currentLang === 'tc' ? 'zh-HK' : 'en-US';
+            const hktTime = new Date(now.toLocaleString(locale, {timeZone: "Asia/Hong_Kong"}));
+            
+            const hours = hktTime.getHours().toString().padStart(2, '0');
+            const minutes = hktTime.getMinutes().toString().padStart(2, '0');
+            const seconds = hktTime.getSeconds().toString().padStart(2, '0');
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = hktTime.toLocaleDateString(locale, options);
+            
+            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds}`;
+            document.getElementById('date').textContent = dateString;
+        }
+        
+        async function loadWeather() {
+            try {
+                const apiUrl = currentLang === 'tc' 
+                    ? 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc'
+                    : 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en';
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                if (data.updateTime) {
+                    const lastUpdateText = currentLang === 'tc' ? '最後更新' : 'Last updated';
+                    const updateDate = new Date(data.updateTime);
+                    const timeStr = updateDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('weatherUpdateTime').textContent = `${lastUpdateText}: ${timeStr}`;
+                }
+                
+                const weatherContainer = document.getElementById('weather-container');
+                weatherContainer.innerHTML = '';
+                
+                if (data.weatherForecast && data.weatherForecast.length > 0) {
+                    const forecastDiv = document.createElement('div');
+                    forecastDiv.className = 'weather-forecast';
+                    
+                    data.weatherForecast.slice(0, 6).forEach(day => {
+                        const dayDiv = document.createElement('div');
+                        dayDiv.className = 'weather-day';
+                        
+                        const dateStr = `${day.week} ${day.forecastDate.slice(4, 6)}/${day.forecastDate.slice(6, 8)}`;
+                        const tempRange = `${day.forecastMintemp.value}°-${day.forecastMaxtemp.value}°`;
+                        const weatherIcon = getWeatherIcon(day.forecastWeather);
+                        
+                        let iconHtml = weatherIcon ? `<img src="${weatherIcon}" alt="${day.forecastWeather}" class="weather-icon">` : '';
+                        
+                        dayDiv.innerHTML = `
+                            ${iconHtml}
+                            <div class="weather-date">${dateStr}</div>
+                            <div class="weather-temp">${tempRange}C</div>
+                            <div class="weather-desc">${day.forecastWeather}</div>
+                        `;
+                        
+                        forecastDiv.appendChild(dayDiv);
+                    });
+                    
+                    weatherContainer.appendChild(forecastDiv);
+                } else {
+                    const notAvailableMsg = currentLang === 'tc' ? '天氣資料暫時未能提供' : 'Weather data not available';
+                    weatherContainer.innerHTML = `<div class="loading">${notAvailableMsg}</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading weather data:', error);
+                const failedMsg = currentLang === 'tc' ? '載入天氣資料失敗' : 'Failed to load weather data';
+                document.getElementById('weather-container').innerHTML = `<div class="loading">${failedMsg}</div>`;
+            }
+        }
+        
+        async function loadBusData() {
+            try {
+                const response =
