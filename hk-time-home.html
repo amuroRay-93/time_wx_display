@@ -82,15 +82,39 @@
             color: #999;
             font-style: italic;
         }
-        .temperature-section {
+        .time-section {
             margin-bottom: 30px;
-            background: #e8f4fd;
+            background: white;
             padding: 25px;
             border-radius: 15px;
             text-align: center;
-            color: #1976D2;
             border-left: 4px solid #2196F3;
-            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .time {
+            font-size: 5.2rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #2c3e50;
+        }
+        .date {
+            font-size: 1.95rem;
+            margin-bottom: 10px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        .timezone {
+            font-size: 1.56rem;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+        .temperature-section {
+            margin-bottom: 30px;
+            background: transparent;
+            padding: 25px 25px 20px;
+            text-align: center;
+            color: #1976D2;
         }
         .temperature-title {
             font-size: 1.2rem;
@@ -112,25 +136,6 @@
             margin-top: 10px;
             color: #666;
         }
-        .time-section {
-            margin-bottom: 40px;
-        }
-        .time {
-            font-size: 4rem;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #2c3e50;
-        }
-        .date {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: #34495e;
-        }
-        .timezone {
-            font-size: 1.2rem;
-            color: #7f8c8d;
-            margin-bottom: 20px;
-        }
         .weather-section {
             margin-top: 30px;
             text-align: left;
@@ -149,8 +154,10 @@
         }
         .weather-forecast {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
         }
         .weather-day {
             background: white;
@@ -159,19 +166,28 @@
             text-align: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
+        .weather-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 8px;
+            image-rendering: -webkit-optimize-contrast;
+        }
         .weather-date {
             font-weight: bold;
             color: #2c3e50;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
         }
         .weather-temp {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             color: #e74c3c;
             margin: 5px 0;
+            font-weight: 500;
         }
         .weather-desc {
             color: #7f8c8d;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            line-height: 1.3;
         }
         .loading {
             text-align: center;
@@ -198,6 +214,37 @@
         body {
             position: relative;
         }
+        
+        @media (max-width: 768px) {
+            .weather-forecast {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                max-width: 100%;
+            }
+            .weather-icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .weather-forecast {
+                grid-template-columns: 1fr;
+            }
+            .time {
+                font-size: 4rem;
+            }
+            .date {
+                font-size: 1.5rem;
+            }
+            .timezone {
+                font-size: 1.2rem;
+            }
+            .weather-icon {
+                width: 36px;
+                height: 36px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -211,6 +258,12 @@
             </div>
         </div>
         
+        <div class="time-section">
+            <div class="timezone">Hong Kong Time (HKT)</div>
+            <div class="date" id="date"></div>
+            <div class="time" id="time"></div>
+        </div>
+        
         <div class="temperature-section">
             <div class="temperature-title" id="tempTitle">Current Temperature</div>
             <div class="temperature-display" id="tempDisplay">--°C</div>
@@ -218,14 +271,8 @@
             <div class="temperature-update" id="tempUpdateTime">Last updated: --:--</div>
         </div>
         
-        <div class="time-section">
-            <div class="timezone">Hong Kong Time (HKT)</div>
-            <div class="date" id="date"></div>
-            <div class="time" id="time"></div>
-        </div>
-        
         <div class="weather-section">
-            <div class="weather-title">Hong Kong 3-Day Weather Forecast</div>
+            <div class="weather-title">Hong Kong 6-Day Weather Forecast</div>
             <div class="weather-update-time" id="weatherUpdateTime">Last updated: --:--</div>
             <div id="weather-container">
                 <div class="loading" id="loadingMessage">Loading weather data...</div>
@@ -235,6 +282,25 @@
 
     <script>
         let currentLang = 'en';
+        
+        function getWeatherIcon(weatherDesc) {
+            const desc = weatherDesc.toLowerCase();
+            
+            if (desc.includes('rain')) {
+                return 'rain.png';
+            } else if (desc.includes('bright')) {
+                return 'bright.png';
+			} else if (desc.includes('cloudy')) {
+                return 'cloudy.png';
+            } else if (desc.includes('sunny intervals') || desc.includes('sunny periods')) {
+                return 'sunny_intervals.png';
+            } else if (desc.includes('sunny') || desc.includes('fine')) {
+                return 'sunny.png';
+            }
+    
+            
+            return ''; // No icon if none match
+        }
         
         function toggleLanguage() {
             currentLang = currentLang === 'en' ? 'tc' : 'en';
@@ -260,7 +326,7 @@
             if (currentLang === 'tc') {
                 langToggle.textContent = 'English';
                 timezone.textContent = '香港時間 (HKT)';
-                weatherTitle.textContent = '香港三日天氣預報';
+                weatherTitle.textContent = '香港六日天氣預報';
                 loadingMessage.textContent = '正在載入天氣資料...';
                 busTitle.textContent = '巴士到站時間';
                 busLoading.textContent = '正在載入巴士資料...';
@@ -274,7 +340,7 @@
             } else {
                 langToggle.textContent = '中文';
                 timezone.textContent = 'Hong Kong Time (HKT)';
-                weatherTitle.textContent = 'Hong Kong 3-Day Weather Forecast';
+                weatherTitle.textContent = 'Hong Kong 6-Day Weather Forecast';
                 loadingMessage.textContent = 'Loading weather data...';
                 busTitle.textContent = 'Bus Arrival Times';
                 busLoading.textContent = 'Loading bus data...';
@@ -352,14 +418,21 @@
                     const forecastDiv = document.createElement('div');
                     forecastDiv.className = 'weather-forecast';
                     
-                    data.weatherForecast.slice(0, 3).forEach(day => {
+                    data.weatherForecast.slice(0, 6).forEach(day => {
                         const dayDiv = document.createElement('div');
                         dayDiv.className = 'weather-day';
                         
                         const dateStr = `${day.week} ${day.forecastDate.slice(4, 6)}/${day.forecastDate.slice(6, 8)}`;
                         const tempRange = `${day.forecastMintemp.value}°-${day.forecastMaxtemp.value}°`;
+                        const weatherIcon = getWeatherIcon(day.forecastWeather);
+                        
+                        let iconHtml = '';
+                        if (weatherIcon) {
+                            iconHtml = `<img src="${weatherIcon}" alt="${day.forecastWeather}" class="weather-icon">`;
+                        }
                         
                         dayDiv.innerHTML = `
+                            ${iconHtml}
                             <div class="weather-date">${dateStr}</div>
                             <div class="weather-temp">${tempRange}C</div>
                             <div class="weather-desc">${day.forecastWeather}</div>
